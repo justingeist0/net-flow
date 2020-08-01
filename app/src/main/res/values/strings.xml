@@ -1,0 +1,43 @@
+<resources>
+    <string name="app_name">Net Flow</string>
+    <string name="net_flow">NET FLOW:</string>
+
+    <string-array name="time_frames">
+    <item name="past_7_days">Past Week</item>
+    <item name="past_30_days">Past Month</item>
+    <item name="past_90_days">Past Quarter</item>
+    <item name="past_180_days">Past Half</item>
+    <item name="past_365_days">Past Year</item>
+    <item name="all_time">All Time</item>
+    </string-array>
+
+    <string name="time_frame_desc">Time frame</string>
+    <string name="button_tag">button</string>
+    <string name="add_log">ADD LOG</string>
+    <string name="add_log_header">CANCEL LOG</string>
+    <string name="edit_log_header">CANCEL EDIT</string>
+    <string name="save">Save</string>
+    <string name="gain">Gain</string>
+    <string name="loss">Loss</string>
+    <string name="empty_error">Field can\'t be empty</string>
+    <string name="zero_error">Field can\'t be zero</string>
+    <string name="delete_confirmation_header">Delete Log from</string>
+    <string name="delete_confirmation_body">This can\'t be undone. Remove log?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="log">Log</string>
+    <string name="logs">Logs</string>
+    <string name="timestamp_format">yyyy/MM/dd HH:mm</string>
+    <string name="delete">Delete</string>
+    <string name="duplicate">Copy</string>
+    <string name="enter_amount">Enter Amount</string>
+    <string name="note_optional">Note (Optional)</string>
+    <string name="average_per_week">Avg. per week: </string>
+    <string name="average_per_month">Avg. per month: </string>
+    <string name="average_per_3month">Avg. per quarter: </string>
+    <string name="average_per_6month">Avg. per half: </string>
+    <string name="average_per_year">Avg. per year: </string>
+    <string name="average_per_day">Avg. per day: </string>
+    <string name="edit">EDIT</string>
+
+</resources>
