@@ -1,5 +1,5 @@
-# net-flow
+# Net-Flow
 
-My money tracking app source code.
+Simple money tracking app.
 
-Support on google play! https://play.google.com/store/apps/details?id=com.fantasma.netflow
+Download on google play! https://play.google.com/store/apps/details?id=com.fantasma.netflow
