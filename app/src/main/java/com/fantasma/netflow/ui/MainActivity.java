@@ -1,4 +1,4 @@
-package com.fantasma.netflow.view;
+package com.fantasma.netflow.ui;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -7,16 +7,25 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import kotlin.Pair;
 
+import android.annotation.SuppressLint;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 
 import android.animation.ObjectAnimator;
 import android.app.Activity;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.LayerDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -24,7 +33,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,24 +41,27 @@ import com.fantasma.netflow.R;
 import com.fantasma.netflow.adapter.HeaderDecoration;
 import com.fantasma.netflow.adapter.LogListAdapter;
 import com.fantasma.netflow.adapter.TimeFrameSpinnerAdapter;
-import com.fantasma.netflow.model.LogModel;
-import com.fantasma.netflow.model.ViewModel;
+import com.fantasma.netflow.database.LogModel;
 import com.fantasma.netflow.util.Constant;
 
 import org.jetbrains.annotations.NotNull;
 
-public class MainActivity extends AppCompatActivity {
+import java.util.Locale;
 
+public class MainActivity extends AppCompatActivity {
+    private static final String KEY_PREFERENCES = "KEY_PREFERENCES";
+    private static final String KEY_TIME_FRAME = "KEY_TIME_FRAME";
     private ViewGroup logLayout, addLogLayout;
     private RecyclerView mainLogsList;
-    private View logListBackground;
-    private Button addLog, gainBtn, lossBtn, copyBtn, deleteBtn;
+    private Button addLogBtn, gainBtn, lossBtn, copyBtn, deleteBtn;
     private EditText amountTxt, noteTxt;
-    private TextView total, negative, positive, logNumber, currentTimeFrame;
-    private ImageView trendingArrowImg;
+    private TextView currentTimeFrame;
     private Spinner timeFrameSpinner;
     private ViewModel viewModel;
+
     private LogListAdapter logListAdapter;
+
+    private boolean addLogScreenOpened;
     private String prevInput;
     private float logListLayoutHeight;
     private LogModel selectedLogToEdit;
@@ -66,9 +77,26 @@ public class MainActivity extends AppCompatActivity {
         setUpAddLog();
     }
 
+    private void createChannel() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "net_flow_channel",
+                    "Net Flow",
+                    NotificationManager.IMPORTANCE_MIN
+            );
+            channel.setShowBadge(false);
+            channel.enableLights(true);
+            channel.setLightColor(Color.GREEN);
+            channel.setDescription("Reminder to add logs");
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
     private void setUpLogList() {
         mainLogsList = findViewById(R.id.mainLogsList);
-        logListAdapter = new LogListAdapter(this, getEditBtnListener());
+        logListAdapter = new LogListAdapter(this, viewModel.getDateToday(), getEditBtnListener());
         viewModel.setLogs(logListAdapter, this);
         mainLogsList.setAdapter(logListAdapter);
         mainLogsList.addItemDecoration(new HeaderDecoration(this, getMonthChecker()));
@@ -78,15 +106,20 @@ public class MainActivity extends AppCompatActivity {
     private LogListAdapter.EditBtnClickListener getEditBtnListener() {
         return new LogListAdapter.EditBtnClickListener() {
             @Override
-            public void onEditClickedAt(int idx) {
-                viewModel.editLog(getContext(), idx);
+            public void onEditClicked() {
+                viewModel.editLog(
+                    getContext(),
+                    logListAdapter.getSelectedDatabaseIdx()
+                );
                 toggleAddLogMenu();
                 copyBtn.setVisibility(View.VISIBLE);
                 deleteBtn.setVisibility(View.VISIBLE);
-                addLog.setText(
+                addLogBtn.setText(
                         getString(R.string.edit_log_header)
                 );
-                mainLogsList.scrollToPosition(idx);
+                mainLogsList.scrollToPosition(
+                        logListAdapter.getSelected()
+                );
             }
         };
     }
@@ -99,9 +132,8 @@ public class MainActivity extends AppCompatActivity {
         return new HeaderDecoration.MonthChecker() {
             @Override
             public boolean requiresHeader(int position) {
-                return logListAdapter.checkIfFirstLogOfMonth(position);
+                return logListAdapter.checkIfHeaderNeeded(position);
             }
-
             @NotNull
             @Override
             public String getHeader(int position) {
@@ -111,46 +143,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void placeViewHolderObservers() {
-        total = findViewById(R.id.netFlowTotal);
-        negative = findViewById(R.id.netFlowNegative);
-        positive = findViewById(R.id.netFlowPositive);
-        logNumber = findViewById(R.id.logCountText);
         currentTimeFrame = findViewById(R.id.current_time_frame);
-        trendingArrowImg = findViewById(R.id.trending_arrow_img);
-
-        viewModel.getLossAndGain().observe(this, new Observer<Pair<Double, Double>>() {
-            @Override
-            public void onChanged(Pair<Double, Double> amount) {
-                //First is negative, second is positive
-                negative.setText(logListAdapter.formatNumber(-amount.getFirst()));
-                positive.setText(logListAdapter.formatNumber(amount.getSecond()));
-                double sum = amount.getSecond() - amount.getFirst();
-                total.setText(logListAdapter.formatNumber(sum));
-                updateTrendingImage(sum);
-                currentTimeFrame.setText(
-                        getResources().getStringArray(R.array.time_frames)
-                        [viewModel.getCurrentTimeFrame()]
-                );
-            }
-        });
-
-        viewModel.getNumberOfLogs().observe(this, new Observer<Integer>() {
-            @Override
-            public void onChanged(Integer integer) {
-                logNumber.setText(
-                        getResources().getQuantityString(R.plurals.totalLogsInTimeFrame, integer, integer)
-                );
-            }
-        });
-
-        /*viewModel.getAverage().observe(this, new Observer<Double>() {
-            @Override
-            public void onChanged(Double averageForTimePeriod) {
-                logAverage.setText(
-                        getString(R.string.average, logListAdapter.formatNumber(averageForTimePeriod))
-                );
-            }
-        });*/
 
         viewModel.getToastMessage().observe(this, new Observer<String>() {
             @Override
@@ -159,7 +152,6 @@ public class MainActivity extends AppCompatActivity {
                     showToast(s);
             }
         });
-
         viewModel.getLogToEdit().observe(this, new Observer<LogModel>() {
             @Override
             public void onChanged(LogModel logModel) {
@@ -167,28 +159,12 @@ public class MainActivity extends AppCompatActivity {
                 if(selectedLogToEdit != null) {
                     prevInput ="";
                     amountTxt.setText(
-                            selectedLogToEdit.getAmount().toString()
+                            String.format(Locale.US,"%2f", selectedLogToEdit.getAmount())
                     );
                     noteTxt.setText(selectedLogToEdit.getNote());
                 }
             }
         });
-    }
-
-    private void updateTrendingImage(double sum) {
-        if(sum != 0) {
-            trendingArrowImg.setVisibility(View.VISIBLE);
-            int id;
-            if(sum > 0)
-                id = R.drawable.ic_trending_up;
-            else
-                id = R.drawable.ic_trending_down;
-            trendingArrowImg.setImageDrawable(
-                    ContextCompat.getDrawable(this, id)
-            );
-        } else {
-            trendingArrowImg.setVisibility(View.GONE);
-        }
     }
 
     private void showToast(String toast) {
@@ -200,10 +176,12 @@ public class MainActivity extends AppCompatActivity {
         timeFrameSpinner.setAdapter(new TimeFrameSpinnerAdapter(this,
                 getResources().getStringArray(R.array.time_frames))
         );
+        timeFrameSpinner.setSelection(getLastTimeFrame());
         timeFrameSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                viewModel.updateCalculations(position);
+                viewModel.setCurrentTimeFrame(position);
+                setTimeFrameText();
                 parent.setEnabled(false);
             }
             @Override
@@ -219,81 +197,141 @@ public class MainActivity extends AppCompatActivity {
                 timeFrameSpinner.performClick();
             }
         });
+        View gradient = findViewById(R.id.gradient_top);
+        AnimationDrawable animationDrawable = (AnimationDrawable) gradient.getBackground();
+        animationDrawable.setExitFadeDuration(8000);
+        animationDrawable.setEnterFadeDuration(10000);
+        animationDrawable.start();
     }
-    
+
+    private void setTimeFrameText() {
+        currentTimeFrame.setText(
+                getResources().getStringArray(R.array.time_frames)
+                        [viewModel.getCurrentTimeFrame()]
+        );
+        logListAdapter.updateTimeFrame(viewModel.getCurrentTimeFrame());
+        mainLogsList.invalidateItemDecorations();
+    }
+
+    private void toggleAddLogMenu() {
+        addLogScreenOpened = !addLogScreenOpened;
+        if(addLogScreenOpened) {
+            openAddLog();
+        } else {
+            hideKeyboard();
+            closeAddLog();
+        }
+    }
+
+    private void closeAddLog() {
+        ObjectAnimator btnSlide = ObjectAnimator.ofFloat(
+                addLogLayout,
+                View.Y,
+                addLogLayout.getY(),
+                logListLayoutHeight - addLogBtn.getHeight()
+        );
+        ObjectAnimator logLayoutFade = ObjectAnimator.ofFloat(
+                logLayout,
+                View.ALPHA,
+                logLayout.getAlpha(),
+                1f
+        );
+        btnSlide.start();
+        logLayoutFade.start();
+    }
+
+    private void openAddLog() {
+        ObjectAnimator btnSlide = ObjectAnimator.ofFloat(
+                addLogLayout,
+                View.Y,
+                addLogLayout.getY(),
+                0f
+        );
+        ObjectAnimator logLayoutFade = ObjectAnimator.ofFloat(
+                logLayout,
+                View.ALPHA,
+                logLayout.getAlpha(),
+                0.5f
+        );
+        btnSlide.start();
+        logLayoutFade.start();
+    }
+
     private void setUpAddLog() {
-        addLog = findViewById(R.id.add_log_btn);
-        addLogLayout = findViewById(R.id.add_log_layout);
-        logListBackground = findViewById(R.id.log_list_background);
+        addLogScreenOpened = false;
+        addLogBtn = findViewById(R.id.add_log_btn);
+        AnimationDrawable buttonDrawable = (AnimationDrawable)
+                ((LayerDrawable) addLogBtn.getBackground()).getDrawable(0);
+        buttonDrawable.setExitFadeDuration(4000);
+        buttonDrawable.setEnterFadeDuration(6000);
+        buttonDrawable.start();
         logLayout = findViewById(R.id.log_list_layout);
         logLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
                 logLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                 logListLayoutHeight = logLayout.getHeight();
-                addLogLayout.setY(logListLayoutHeight-addLog.getHeight()); //Called once after views created
+                addLogLayout.setY(logListLayoutHeight- addLogBtn.getHeight()); //Called once after views created
             }
         });
-        setUpAddLogAnimation();
-        setUpAddLogLayouts();
-    }
 
-    private void setUpAddLogAnimation() {
-        addLog.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleAddLogMenu();
-                hideAddLogScreen();
-            }
-        });
-        logListBackground.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                toggleAddLogMenu();
-            }
-        });
-    }
-
-    private void toggleAddLogMenu() {
-        ObjectAnimator btnSlide = ObjectAnimator.ofFloat(
-                addLogLayout,
-                View.Y,
-                addLogLayout.getY(),
-                logListLayoutHeight-addLogLayout.getY()-addLog.getHeight()
-        );
-        ObjectAnimator logLayoutFade = ObjectAnimator.ofFloat(
-                logLayout,
-                View.ALPHA,
-                logLayout.getAlpha(),
-                1f - logLayout.getAlpha() + 0.5f
-        );
-        btnSlide.start();
-        logLayoutFade.start();
-    }
-
-    private void setUpAddLogLayouts() {
         amountTxt = findViewById(R.id.enter_amount_edit_txt);
+        addLogLayout = findViewById(R.id.add_log_layout);
         noteTxt = findViewById(R.id.addPurposeInput);
-
         gainBtn = findViewById(R.id.buttonGain);
         lossBtn = findViewById(R.id.buttonLoss);
         deleteBtn = findViewById(R.id.deleteButton);
         copyBtn = findViewById(R.id.duplicateButton);
+
+        View addLogBackground = findViewById(R.id.gradient_add_log_group);
+        AnimationDrawable background = (AnimationDrawable)
+                ((LayerDrawable) addLogBackground.getBackground()).getDrawable(1);
+        background.setExitFadeDuration(10000);
+        background.setEnterFadeDuration(8000);
+        background.start();
+        addLogBackground.setOnTouchListener(new View.OnTouchListener() {
+            float startY = 0f;
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if(event.getAction() == MotionEvent.ACTION_DOWN)
+                    startY = event.getY();
+                else if(event.getAction() == MotionEvent.ACTION_UP)
+                    if(event.getY()-startY > 5)
+                        toggleAddLogMenu();
+                return true; // Always intercept touch event
+            }
+        });
+
+        addLogBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hideKeyboard();
+                toggleAddLogMenu();
+                if(selectedLogToEdit == null) {
+                    if (addLogScreenOpened) {
+                        amountTxt.requestFocus();
+                        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                        imm.showSoftInput(amountTxt, InputMethodManager.SHOW_IMPLICIT);
+                    }
+                } else if(!addLogScreenOpened) {
+                    addLogBtn.setText(getString(R.string.add_log_header));
+                    resetAddLogScreen();
+                }
+            }
+        });
 
         amountTxt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 storePrevInput(s.toString());
             }
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 formatText(s.toString());
             }
-
             @Override
             public void afterTextChanged(Editable s) {
-
             }
         });
 
@@ -301,14 +339,12 @@ public class MainActivity extends AppCompatActivity {
         lossBtn.setTag(Constant.LOSS_BTN);
         deleteBtn.setTag(Constant.DELETE_BTN);
         copyBtn.setTag(Constant.COPY_BTN);
-
         View.OnClickListener addLogBtnListener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 validateInputAndStore((Integer)v.getTag());
             }
         };
-
         gainBtn.setOnClickListener(addLogBtnListener);
         lossBtn.setOnClickListener(addLogBtnListener);
         deleteBtn.setOnClickListener(addLogBtnListener);
@@ -325,11 +361,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void formatText(String input) {
         if(input.isEmpty()) return;
-
         boolean registerInput;
         String formatText = input;
         int select = amountTxt.getSelectionStart();
-
         int MAX_AMOUNT = 14; //(Billion)
         if(input.contains(".")) {
             registerInput = input.indexOf(".") < MAX_AMOUNT;
@@ -342,7 +376,6 @@ public class MainActivity extends AppCompatActivity {
                 prevInput = prevInput.substring(0, prevInput.length()-1) + input.charAt(input.length()-1);
             }
         }
-
         if(input.length() < prevInput.length()) {
             if(prevInput.contains(".") && !input.contains(".")) {
                 prevInput = prevInput.substring(0, prevInput.indexOf("."));
@@ -352,16 +385,13 @@ public class MainActivity extends AppCompatActivity {
             }
         } else if(!registerInput && ((input.contains(".") && select > input.indexOf(".")) || !prevInput.contains(".") && input.contains(".")))
             registerInput = true;
-
         if(registerInput) {
             //Prepare Formatting
             formatText = formatText.replaceAll(",", "");
-
             //Deleting '1' in 1,000,000 sets text to 0
             if (formatText.length() >= 2 && formatText.charAt(0) == '0' && formatText.charAt(1) != '.') {
                 formatText = formatText.substring(1);
             }
-
             //Add Commas
             int start = (formatText.contains(".") ? formatText.indexOf('.') : formatText.length());
             int count = 0;
@@ -378,10 +408,8 @@ public class MainActivity extends AppCompatActivity {
             }
             select += formatText.length() - input.length();
             if (select < 0) select = 0;
-
             if (select - 1 > 0 && formatText.charAt(select - 1) == ',')
                 select--;
-
             //Format Change
             if (formatText.contains(".") && formatText.indexOf('.') < formatText.length() - 3) {
                 if (select == formatText.length()) {
@@ -403,7 +431,6 @@ public class MainActivity extends AppCompatActivity {
                 prevInput = null;
             }
         }
-
         if(!input.equals(formatText)) {
             amountTxt.setText(formatText);
             amountTxt.setSelection(select);
@@ -419,10 +446,8 @@ public class MainActivity extends AppCompatActivity {
             amountTxt.setError(getString(R.string.zero_error));
             return;
         }
-
         double amountNumber = Double.parseDouble(amountString.replace(",", ""));
         String description = noteTxt.getText().toString();
-
         if(selectedLogToEdit==null || id == Constant.COPY_BTN) {
             logListAdapter.addNewLog(
                     viewModel.addLog(
@@ -445,9 +470,9 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         selectedLogToEdit = null;
-        copyBtn.setVisibility(View.GONE);
-        deleteBtn.setVisibility(View.GONE);
-        addLog.setText(
+        copyBtn.setVisibility(View.INVISIBLE);
+        deleteBtn.setVisibility(View.INVISIBLE);
+        addLogBtn.setText(
                 getString(R.string.add_log_header)
         );
         hideAddLogScreen();
@@ -455,7 +480,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void confirmDelete() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getString(R.string.delete_confirmation_header, logListAdapter.getHeaderText(selectedLogToEdit)));
+        builder.setTitle(getString(R.string.delete_confirmation_header, logListAdapter.getDeleteHeader(selectedLogToEdit)));
         builder.setMessage(getString(R.string.delete_confirmation_body));
         builder.setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
             @Override
@@ -479,7 +504,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void hideAddLogScreen() {
-        hideKeyboard(); //TODO bathroom
+        hideKeyboard();
         resetAddLogScreen();
         toggleAddLogMenu();
     }
@@ -498,8 +523,10 @@ public class MainActivity extends AppCompatActivity {
     private void resetAddLogScreen() {
         amountTxt.setText("");
         noteTxt.setText("");
-        addLog.setText(getString(R.string.add_log_header));
-        int color = ContextCompat.getColor(this, R.color.white);
+        addLogBtn.setText(getString(R.string.add_log_header));
+        deleteBtn.setVisibility(View.INVISIBLE);
+        copyBtn.setVisibility(View.INVISIBLE);
+        int color = ContextCompat.getColor(this, R.color.whiter);
         lossBtn.setTextColor(color);
         gainBtn.setTextColor(color);
         selectedLogToEdit = null;
@@ -507,9 +534,27 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if(addLog.getY() == 0)
+        if(addLogScreenOpened)
             toggleAddLogMenu();
         else
             super.onBackPressed();
+    }
+
+    @Override
+    protected void onPause() {
+        setTimeFrame(viewModel.getCurrentTimeFrame());
+        super.onPause();
+    }
+
+    private int getLastTimeFrame() {
+        SharedPreferences prefs = getSharedPreferences(KEY_PREFERENCES, Context.MODE_PRIVATE);
+        return prefs.getInt(KEY_TIME_FRAME, 0);
+    }
+
+    private void setTimeFrame(int timeFrame) {
+        SharedPreferences prefs = getSharedPreferences(KEY_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt(KEY_TIME_FRAME, timeFrame);
+        editor.apply();
     }
 }

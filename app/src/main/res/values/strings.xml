@@ -2,12 +2,12 @@
     <string name="app_name">Net Flow</string>
 
     <string-array name="time_frames">
-        <item name="past_7_days">Past Week</item>
-        <item name="past_30_days">Past Month</item>
-        <item name="past_90_days">Past Quarter</item>
-        <item name="past_180_days">Past Half</item>
-        <item name="past_365_days">Past Year</item>
-        <item name="all_time">All Time</item>
+        <item name="past_7_days">Weekly Flow</item>
+        <item name="past_30_days">Monthly Flow</item>
+        <item name="past_90_days">Quarterly Flow</item>
+        <item name="past_180_days">Half Yearly Flow</item>
+        <item name="past_365_days">Yearly Flow</item>
+        <item name="all_time">Daily Flow</item>
     </string-array>
 
     <string name="time_frame_desc">Time frame slider toggle.</string>
@@ -23,9 +23,46 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
 
+    <string-array name="months">
+        <item name="january">January</item>
+        <item name="february">February</item>
+        <item name="march">March</item>
+        <item name="april">April</item>
+        <item name="may">May</item>
+        <item name="june">June</item>
+        <item name="july">July</item>
+        <item name="august">August</item>
+        <item name="september">September</item>
+        <item name="october">October</item>
+        <item name="november">November</item>
+        <item name="december">December</item>
+    </string-array>
+
+    <plurals name="day_extension">
+        <item quantity="zero">%sst</item>
+        <item quantity="one">%snd</item>
+        <item quantity="two">%snd</item>
+        <item quantity="other">%sth</item>
+    </plurals>
+
     <plurals name="totalLogsInTimeFrame">
         <item quantity="one">%d Log</item>
         <item quantity="other">%d Logs</item>
+    </plurals>
+
+    <plurals name="week">
+        <item quantity="one">Past Week: %s</item>
+        <item quantity="other">%d Weeks Ago: %s</item>
+    </plurals>
+
+    <plurals name="quarter">
+        <item quantity="one">Past Quarter: %s</item>
+        <item quantity="other">%d Quarters Ago: %s</item>
+    </plurals>
+
+    <plurals name="half">
+        <item quantity="one">Past Half: %s</item>
+        <item quantity="other">%d Halves Ago: %s</item>
     </plurals>
 
     <string name="timestamp_format">yyyy/MM/dd HH:mm</string>
@@ -45,6 +82,6 @@
     <string name="drop_down_button_for_time_frames">Drop down button for time frames</string>
     <string name="drop_down_menu_to_select_time_frame">Click to release menu to select time frame</string>
 
-    <string name="newLogAdded"></string>
+    <string name="netFlowMainChannel">net_flow_main_channel</string>
 
 </resources>

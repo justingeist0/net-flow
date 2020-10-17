@@ -7,26 +7,26 @@
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="5dp"
+        android:layout_height="@dimen/log_item_header_margin"
         android:clickable="false"
-        android:background="@color/primaryText"/>
+        android:background="@color/black"/>
 
     <TextView
         android:id="@+id/header_tv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/log_list_header_background"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:textColor="@color/primaryText"
         android:paddingHorizontal="8dp"
         android:paddingVertical="8dp"
-        tools:text="Header"/>
+        android:textColor="@color/whiter"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        tools:text="Header" />
 
     <View
         android:layout_width="match_parent"
         android:layout_height="3dp"
         android:clickable="false"
-        android:background="@color/primaryText"/>
+        android:background="@color/black"/>
 
 </LinearLayout>

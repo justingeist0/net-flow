@@ -13,7 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public class TimeFrameSpinnerAdapter extends ArrayAdapter<String> {
-
     private String[] items;
 
     public TimeFrameSpinnerAdapter(Context context, String[] timeFrames) {
@@ -35,16 +34,10 @@ public class TimeFrameSpinnerAdapter extends ArrayAdapter<String> {
     private View initView(int position, View convertView, ViewGroup parent) {
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(
-                    R.layout.time_frame_open, parent, false
+                    R.layout.spinner_open, parent, false
             );
             TextView timeFrame = convertView.findViewById(R.id.time_frame);
             timeFrame.setText(items[position]);
-        }
-        View extraSpace = convertView.findViewById(R.id.last_item_spinner);
-        if(position == items.length-1){
-            extraSpace.setVisibility(View.VISIBLE);
-        } else {
-            extraSpace.setVisibility(View.GONE);
         }
         return convertView;
     }

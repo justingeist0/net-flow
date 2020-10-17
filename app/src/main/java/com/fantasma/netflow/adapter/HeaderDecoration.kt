@@ -14,18 +14,20 @@ class HeaderDecoration(
         private val context: Context,
         private val monthChecker: MonthChecker
 ) : RecyclerView.ItemDecoration() {
-
     private var headerView : View? = null
     private lateinit var headerText : TextView
     private var headerHeight = 0
     private var topHeaderTranslationY = 0f
+    private val itemHeaderMarginTop = context.resources.getDimension(R.dimen.log_item_header_margin)
+    private val itemMarginBottom = context.resources.getDimension(R.dimen.log_item_bottom_margin)
 
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
         super.getItemOffsets(outRect, view, parent, state)
         val position = parent.getChildAdapterPosition(view)
-        if(monthChecker.requiresHeader(position)) {
+        if(position >= 0 && monthChecker.requiresHeader(position)) {
             outRect.top = headerHeight
         }
+        outRect.bottom = itemMarginBottom.toInt()
     }
 
     override fun onDrawOver(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
@@ -35,7 +37,7 @@ class HeaderDecoration(
         for(i in 1 until parent.childCount) {
             val childView = parent.getChildAt(i)
             val position = parent.getChildAdapterPosition(childView)
-            if(monthChecker.requiresHeader(position)) {
+            if(position >= 0 && monthChecker.requiresHeader(position)) {
                 drawHeader(
                         c,
                         childView,
@@ -44,21 +46,23 @@ class HeaderDecoration(
                 )
             }
         }
+        val position = parent.getChildAdapterPosition(
+                parent.getChildAt(0)
+        )
+        if(position < 0) return
         drawHeader( //Top Most Header
                 c,
                 topHeaderTranslationY,
                 headerView,
                 monthChecker.getHeader(
-                        parent.getChildAdapterPosition(
-                            parent.getChildAt(0)
-                        )
+                        position
                 )
         )
     }
 
     private fun getHeaderView(parent: RecyclerView) : View {
         if(headerView == null) {
-            headerView = LayoutInflater.from(context).inflate(R.layout.log_item_header, parent, false)
+            headerView = LayoutInflater.from(context).inflate(R.layout.list_log_header, parent, false)
             fixLayoutSize(headerView!!, parent)
             headerHeight = headerView!!.height
             headerText = headerView!!.findViewById(R.id.header_tv)
@@ -68,9 +72,9 @@ class HeaderDecoration(
     }
 
     private fun drawHeader(c: Canvas, childView: View, headerView: View, text: String) {
-        val tranY = (childView.top - headerView.height).toFloat()
-        if(tranY-headerView.height < topHeaderTranslationY)
-            topHeaderTranslationY = tranY-headerView.height
+        val tranY = (childView.top - headerView.height).toFloat()+childView.translationY
+        if(tranY-headerView.height < topHeaderTranslationY - itemHeaderMarginTop)
+            topHeaderTranslationY = tranY-headerView.height+itemHeaderMarginTop
         drawHeader(c, tranY, headerView, text)
     }
 

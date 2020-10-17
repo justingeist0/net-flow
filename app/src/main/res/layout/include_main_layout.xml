@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout android:id="@+id/log_list_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".ui.MainActivity"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:id="@+id/btn_time_frame"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black"
+        android:contentDescription="@string/drop_down_menu_to_select_time_frame"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:paddingStart="8dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/icon"
+            tools:ignore="ContentDescription,RtlSymmetry" />
+
+        <TextView
+            android:id="@+id/current_time_frame"
+            style="?android:attr/dropDownItemStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="marquee"
+            android:fontFamily="@font/roboto"
+            android:gravity="start|center"
+            android:padding="10dp"
+            android:singleLine="true"
+            android:textColor="@color/whitest"
+            android:textSize="18sp"
+            tools:text="Past Month" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@string/drop_down_button_for_time_frames"
+            android:src="@drawable/ic_arrow_drop_down" />
+
+    </LinearLayout>
+
+
+    <Spinner
+        android:id="@+id/time"
+        android:layout_width="match_parent"
+        android:layout_height="0px"
+        android:background="@color/black"
+        android:layout_marginHorizontal="10dp"
+        android:gravity="start|center"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_time_frame" />
+
+    <View
+        android:id="@+id/gradient_top"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:alpha="0.5"
+        android:background="@drawable/gradient_list_drop_down" />
+
+
+   <!-- <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="2dp"
+        android:background="@drawable/main_stats_background"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageView
+            android:id="@+id/trending_arrow_img"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="4dp"
+            android:src="@drawable/ic_trending_down"
+            app:layout_constraintBottom_toBottomOf="@id/netFlowTotal"
+            app:layout_constraintEnd_toStartOf="@id/positiveNegativeLayout"
+            app:layout_constraintTop_toTopOf="@id/netFlowTotal"
+            tools:ignore="ContentDescription,RtlSymmetry" />
+
+        <TextView
+            android:id="@+id/netFlowTotal"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:maxLines="1"
+            android:paddingStart="10dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="1dp"
+            android:textColor="@color/black"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            app:autoSizeMaxTextSize="28sp"
+            app:autoSizeMinTextSize="10sp"
+            app:autoSizeStepGranularity="2sp"
+            app:autoSizeTextType="uniform"
+            app:layout_constrainedWidth="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/trending_arrow_img"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
+            tools:ignore="RtlSymmetry"
+            tools:text="-654545.00" />
+
+        <LinearLayout
+            android:id="@+id/positiveNegativeLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toStartOf="@id/logCountText"
+            app:layout_constraintTop_toTopOf="@id/netFlowTotal"
+            app:layout_constraintVertical_chainStyle="packed">
+
+            <TextView
+                android:id="@+id/netFlowPositive"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:textColor="@color/green"
+                android:textSize="12sp"
+                android:layout_marginTop="3dp"
+                tools:text="+$100.00" />
+
+            <TextView
+                android:id="@+id/netFlowNegative"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:layout_marginBottom="6dp"
+                android:textColor="@color/red"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toBottomOf="@id/netFlowTotal"
+                app:layout_constraintTop_toBottomOf="@+id/netFlowPositive"
+                app:layout_constraintEnd_toStartOf="@id/logCountText"
+                tools:text="-$200.00" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/logCountText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            android:gravity="end|top"
+            android:maxLines="1"
+            android:paddingHorizontal="8dp"
+            android:layout_marginBottom="6dp"
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="100 logs" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>-->
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/add_log_btn_height">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/mainLogsList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="12dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintVertical_bias="0.0">
+
+        </androidx.recyclerview.widget.RecyclerView>
+
+        <View
+            android:id="@+id/log_list_background"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@id/mainLogsList"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>

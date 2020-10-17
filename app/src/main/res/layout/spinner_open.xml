@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@drawable/background_spinner_background"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:paddingStart="8dp"
+        android:src="@drawable/ic_trending_down"
+        tools:ignore="ContentDescription,RtlSymmetry" />
+
+    <TextView
+        android:id="@+id/time_frame"
+        style="?android:attr/dropDownItemStyle"
+        android:gravity="start|center"
+        android:textAllCaps="false"
+        android:textSize="18sp"
+        android:textColor="@color/whiter"
+        android:padding="10dp"
+        android:singleLine="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="marquee">
+    </TextView>
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:src="@drawable/ic_trending_up"
+        tools:ignore="ContentDescription" />
+
+</LinearLayout>

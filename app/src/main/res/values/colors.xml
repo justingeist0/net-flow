@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="white">#ffffff</color>
+    <color name="whitest">#FFFFFF</color>
+    <color name="whiter">#E4E4E4</color>
+    <color name="white">#D6D6D6</color>
     <color name="colorAccent">@color/green</color>
-    <color name="green">#008000</color>
-    <color name="primaryText">#212121</color>
-    <color name="black">#101010</color>
-    <color name="red">#DC143C</color>
-    <color name="logListItemBackground">#FFFFFF</color>
-    <color name="headerBackground">#F4F4F4</color>
-    <color name="addLogBackground">@color/primaryText</color>
-    <color name="mainStatBackground">#FFFFFF</color>
+    <color name="green">#00FF00</color>
+    <color name="black">#000000</color>
+    <color name="red">#FF0000</color>
+    <color name="textGreen">#B2FFB2</color>
+    <color name="textRed">#FF8686</color>
+    <color name="headerBackground">#151515</color>
+    <color name="lessBlack">#222222</color>
 </resources>

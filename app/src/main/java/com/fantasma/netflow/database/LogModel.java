@@ -1,4 +1,4 @@
-package com.fantasma.netflow.model;
+package com.fantasma.netflow.database;
 
 import android.annotation.SuppressLint;
 
@@ -6,7 +6,7 @@ public class LogModel {
     private Double amount;
     private boolean positive;
     private String note, timeStamp;
-    private int[] date;
+    private Integer[] date;
     private String ID;
 
     public LogModel(String timeStamp, String purpose, Double amount, boolean positive, String ID) {
@@ -19,7 +19,7 @@ public class LogModel {
             this.note = "";
         }
         String[] dateStr = timeStamp.split(" ")[0].split("/");
-        date = new int[] {
+        date = new Integer[] {
                 Integer.parseInt(dateStr[0]), //Year
                 Integer.parseInt(dateStr[1]), //Month
                 Integer.parseInt(dateStr[2])  //Day
@@ -42,6 +42,10 @@ public class LogModel {
         return amount;
     }
 
+    public Double getValue() {
+        return amount*(isPositive()?1:-1);
+    }
+
     public boolean isPositive() {
         return positive;
     }
@@ -50,7 +54,7 @@ public class LogModel {
         return note;
     }
 
-    public int[] getDate() { return date; }
+    public Integer[] getDate() { return date; }
 
     public int getYear() {return date[0];}
 

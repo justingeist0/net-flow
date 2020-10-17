@@ -3,11 +3,13 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/primaryText</item>
+        <item name="colorPrimary">@color/black</item>
         <item name="colorPrimaryDark">@color/black</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorAccent">@color/lessBlack</item>
         <item name="font">@font/roboto</item>
         <item name="android:navigationBarColor" tools:targetApi="lollipop">@color/black</item>
     </style>
+
+    <style name="Toolbar" parent="ThemeOverlay.AppCompat.Light" />
 
 </resources>

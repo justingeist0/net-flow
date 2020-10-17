@@ -1,5 +1,6 @@
-package com.fantasma.netflow.model
+package com.fantasma.netflow.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -7,24 +8,12 @@ import androidx.lifecycle.ViewModel
 import com.fantasma.netflow.R
 import com.fantasma.netflow.adapter.LogListAdapter
 import com.fantasma.netflow.database.DatabaseHelper
-import com.fantasma.netflow.util.DataAtTimeFrames
+import com.fantasma.netflow.database.LogModel
 import kotlinx.coroutines.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ViewModel : ViewModel() {
-    private lateinit var dataAtTimeFrame: DataAtTimeFrames
-
-    private var _lossAndGain = MutableLiveData<Pair<Double, Double>>()
-    val lossAndGain: LiveData<Pair<Double, Double>>
-        get() = _lossAndGain
-
-    private var _average = MutableLiveData<Double>()
-    val average: LiveData<Double>
-        get() = _average
-
-    private var _numberOfLogs = MutableLiveData<Int>()
-    val numberOfLogs: LiveData<Int>
-        get() = _numberOfLogs
-
     private var _toastMessage = MutableLiveData<String>()
     val toastMessage: LiveData<String>
         get() = _toastMessage
@@ -36,19 +25,14 @@ class ViewModel : ViewModel() {
     private var logs = mutableListOf<LogModel>()
 
     var currentTimeFrame = 5
-        private set
 
     private val uiScope = CoroutineScope(Dispatchers.Main + Job())
-
 
     fun setLogs(adapter: LogListAdapter, context: Context) {
         adapter.setLogs(logs)
         uiScope.launch {
             if (logs.isEmpty()) {
-                logs = getAllLogs(context) ?: logs
-                dataAtTimeFrame = DataAtTimeFrames()
-                dataAtTimeFrame.setCalculations(logs)
-                updateLiveData()
+                logs = fillUpWithXRandomLogs(10000) ?: logs
             }
             adapter.setLogs(logs)
         }
@@ -63,10 +47,10 @@ class ViewModel : ViewModel() {
         }
     }
 
-  /*  private fun fillUpWithXRandomLogs(x: Int): List<LogModel>? {
+    private fun fillUpWithXRandomLogs(x: Int): MutableList<LogModel>? {
         val randomLogs: MutableList<LogModel> = ArrayList()
         val r = Random()
-        var today: String = getTimeStamp()
+        var today: String =  getTimeStampNow()
         for (i in 0 until x) {
             val purpose = if (r.nextBoolean()) "Lorem ipsum dolor sit amet" else ""
             randomLogs.add(LogModel(today, purpose, r.nextDouble() * 1000.00, r.nextInt(5) < 3, ""))
@@ -90,25 +74,28 @@ class ViewModel : ViewModel() {
             today = year.toString() + "/" + month + "/" + day + " " + r.nextInt(24) + ":" + r.nextInt(60)
         }
         return randomLogs
-    }*/
-
-    fun updateCalculations(timeFrame: Int) {
-        currentTimeFrame = timeFrame
-        updateLiveData()
     }
 
-    private fun updateLiveData() {
-        _lossAndGain.postValue(
-                dataAtTimeFrame.lossGainAt(currentTimeFrame)
-        )
-        _numberOfLogs.postValue(
-                dataAtTimeFrame.amountOfLogsAt(currentTimeFrame)
-        )
-        _average.postValue(dataAtTimeFrame.getPerDayAverage(currentTimeFrame))
+    private fun getAmountOfDaysInMonth(year: Int, month: Int): Int {
+        if (month == 4 || month == 6 || month == 9 || month == 11) {
+            return 30
+        } else if (month == 2) {
+            return if (isLeapYear(year)) {
+                29
+            } else {
+                28
+            }
+        }
+        return 31
     }
+
+    private fun isLeapYear(year: Int): Boolean {
+        return year % 400 == 0 || year % 4 == 0 && year % 100 != 0
+    }
+
 
     fun addLog(context: Context, amount: Double, note: String, isPositive: Boolean, copy: Boolean) : LogModel {
-        val newLog = LogModel(dataAtTimeFrame.getTimeStampNow(), note, amount, isPositive, "")
+        val newLog = LogModel(getTimeStampNow(), note, amount, isPositive, "")
         uiScope.launch {
             _toastMessage.postValue(
                 if(addLogToDatabase(context, newLog))
@@ -128,10 +115,9 @@ class ViewModel : ViewModel() {
                     context.getString(R.string.addLogError)
             )
         }
-        dataAtTimeFrame.addNewLog(newLog.isPositive, newLog.amount)
-        updateLiveData()
         return newLog
     }
+
 
     fun editLog(context: Context, idx: Int) {
         uiScope.launch {
@@ -164,8 +150,6 @@ class ViewModel : ViewModel() {
             else
                 _toastMessage.postValue(context.getString(R.string.logFailedUpdate))
         }
-        dataAtTimeFrame.updateLogCalculations(selectedLog, updatedLog)
-        updateLiveData()
         return updatedLog
     }
 
@@ -185,8 +169,6 @@ class ViewModel : ViewModel() {
             else
                 _toastMessage.postValue(context.getString(R.string.deleteFailed))
         }
-        dataAtTimeFrame.deleteLogCalculations(selectedLog)
-        updateLiveData()
     }
 
     private suspend fun deleteLog(context: Context, logID: String) : Boolean {
@@ -204,8 +186,25 @@ class ViewModel : ViewModel() {
             val success = db.addOne(newLog)
             db.close()
             success
-            //(log.isPositive() ? "Gain" : "Loss") + (log.getID().isEmpty() ? " Added" : " Duplicated")
         }
     }
+
+
+    @SuppressLint("SimpleDateFormat")
+    fun getTimeStampNow(): String {
+        val dateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm")
+        val date = Date()
+        return dateFormat.format(date)
+    }
+
+    fun getDateToday(): Array<Int> {
+        val dateStr: List<String> = getTimeStampNow().split(" ")[0].split("/")
+        return arrayOf(
+                dateStr[0].toInt(),
+                dateStr[1].toInt(),
+                dateStr[2].toInt()
+        )
+    }
+
 
 }

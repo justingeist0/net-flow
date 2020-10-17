@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="add_log_btn_height">48dp</dimen>
+    <dimen name="log_item_header_margin">5dp</dimen>
+    <dimen name="log_item_bottom_margin">1.5dp</dimen>
 </resources>
