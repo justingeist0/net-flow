@@ -1,5 +1,11 @@
 # Net-Flow
+## Gains/Losses Calculator
 
-Simple money tracking app.
+Features:
+- Sticky Header (ItemDecoration)
+- Custom Adapters (RecyclerView/Spinner)
+- SQLite Database
+- Material Design
+- MVVM
 
-Download on google play! https://play.google.com/store/apps/details?id=com.fantasma.netflow
+[Download on Google Play](https://play.google.com/store/apps/details?id=com.fantasmaplasma.netflow)
