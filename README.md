@@ -8,4 +8,4 @@ Features:
 - Material Design
 - MVVM
 
-[Download on Google Play](https://play.google.com/store/apps/details?id=com.fantasma.netflow)
+[Download on Google Play](https://play.google.com/store/apps/details?id=com.fantasmaplasma.netflow)
