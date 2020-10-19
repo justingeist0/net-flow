@@ -57,44 +57,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
 
     @Override
     public void onBindViewHolder(@NonNull LogViewHolder holder, int position) {
-        boolean positive = logs.get(position).isPositive();
-        if(mCurrentTimeFrame == Constant.ALL_TIME) {
-            holder.timeStamp.setText(
-                    formatToTime(
-                            logs.get(position).getTimeStamp()
-                    )
-            );
-        } else {
-            holder.timeStamp.setText(
-                    formatToDate(
-                            logs.get(position)
-                    )
-            );
-        }
-        holder.amount.setText(
-                formatAmount(
-                        logs.get(position)
-                )
-        );
-        holder.amount.setTextColor(
-                positive ? context.getResources().getColor(R.color.textGreen) :
-                context.getResources().getColor(R.color.textRed)
-        );
-        int padding = holder.amount.getPaddingTop();
-        if(logs.get(position).hasDesc()) {
-            holder.description.setText(logs.get(position).getNote());
-            holder.description.setVisibility(View.VISIBLE);
-            holder.amount.setPadding(0, padding, 0, 0);
-            holder.timeStamp.setPadding(padding, padding, padding, 0);
-        } else{
-            holder.description.setVisibility(View.GONE);
-            holder.amount.setPadding(0, padding, 0, padding);
-            holder.timeStamp.setPadding(padding, padding, padding, padding);
-        }
-        if (position == mSelected)
-            holder.animateEditBtn();
-        else
-            holder.editButton.setVisibility(View.INVISIBLE);
+        holder.bind(position);
     }
 
     @Override
@@ -108,7 +71,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         notifyDataSetChanged();
     }
 
-    public class LogViewHolder extends RecyclerView.ViewHolder {
+    class LogViewHolder extends RecyclerView.ViewHolder {
         TextView timeStamp, amount, description;
         Button editButton;
 
@@ -122,27 +85,31 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(editBtn != null) {
-                        editBtn.animate()
-                                .translationX(-editBtn.getWidth())
-                                .withEndAction(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        editBtn.setVisibility(View.INVISIBLE);
-                                        if(mSelected == getAdapterPosition()) {
-                                            mSelected = -1;
-                                            editBtn = null;
-                                        } else {
-                                            animateSelected();
-                                        }
-                                    }
-                                })
-                                .start();
-                    } else {
-                        animateSelected();
-                    }
+                    toggleEditBtn();
                 }
             });
+        }
+
+        private void toggleEditBtn() {
+            if(editBtn != null) {
+                editBtn.animate()
+                        .translationX(-editBtn.getWidth())
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                editBtn.setVisibility(View.INVISIBLE);
+                                if(mSelected == getAdapterPosition()) {
+                                    mSelected = -1;
+                                    editBtn = null;
+                                } else {
+                                    animateSelected();
+                                }
+                            }
+                        })
+                        .start();
+            } else {
+                animateSelected();
+            }
         }
 
         private void animateSelected() {
@@ -151,13 +118,50 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             animateEditBtn();
         }
 
-        public void animateEditBtn() {
+        private void animateEditBtn() {
             editBtn = editButton;
             editButton.setVisibility(View.VISIBLE);
             editButton.setTranslationX(-editButton.getWidth());
             editButton.animate()
                     .translationX(translationX)
                     .start();
+        }
+
+        void bind(int position) {
+            LogModel log = logs.get(position);
+            if(mCurrentTimeFrame == Constant.ALL_TIME) {
+                timeStamp.setText(
+                        formatToTime(
+                                log.getTimeStamp()
+                        )
+                );
+            } else {
+                timeStamp.setText(
+                        formatMonthDay(log)
+                );
+            }
+            amount.setText(
+                    formatAmount(log)
+            );
+            amount.setTextColor(
+                    log.isPositive() ? context.getResources().getColor(R.color.textGreen) :
+                            context.getResources().getColor(R.color.textRed)
+            );
+            int padding = amount.getPaddingTop();
+            if(log.hasDesc()) {
+                description.setText(log.getNote());
+                description.setVisibility(View.VISIBLE);
+                amount.setPadding(0, padding, 0, 0);
+                timeStamp.setPadding(padding, padding, padding, 0);
+            } else{
+                description.setVisibility(View.GONE);
+                amount.setPadding(0, padding, 0, padding);
+                timeStamp.setPadding(padding, padding, padding, padding);
+            }
+            if (position == mSelected)
+                animateEditBtn();
+            else
+                editButton.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -241,7 +245,8 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
                     headerCache.endIdx >= position)
                 return headerCache.header;
         }
-        return "";
+        checkIfHeaderNeeded(position);
+        return getHeaderText(position);
     }
 
     private void setWeekHeader(int position) {
@@ -270,7 +275,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             header = context.getResources().getQuantityString(R.plurals.week, steps, formatNumber(total));
         else
             header = context.getResources().getQuantityString(R.plurals.week, steps, steps, formatNumber(total));
-        mCache.add(new HeaderCache(headerIdx, position-1, header));
+        mCache.add(new HeaderCache(headerIdx, position - 1, header));
     }
 
     private void setMonthHeader(int position) {
@@ -296,7 +301,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             position++;
         }
         String header = getMonthFromNumber(log.getMonth()) + " " + formatNumber(total);
-        mCache.add(new HeaderCache(headerIdx, position-1, header));
+        mCache.add(new HeaderCache(headerIdx, position - 1, header));
     }
 
     private void setQuarterHeader(int position) {
@@ -325,7 +330,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             header = context.getResources().getQuantityString(R.plurals.quarter, steps, formatNumber(total));
         else
             header = context.getResources().getQuantityString(R.plurals.quarter, steps, steps, formatNumber(total));
-        mCache.add(new HeaderCache(headerIdx, position-1, header));
+        mCache.add(new HeaderCache(headerIdx, position - 1, header));
     }
 
     private void setHalfHeader(int position) {
@@ -353,7 +358,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             header = context.getResources().getQuantityString(R.plurals.half, steps, formatNumber(total));
         else
             header = context.getResources().getQuantityString(R.plurals.half, steps, steps, formatNumber(total));
-        mCache.add(new HeaderCache(headerIdx, position-1, header));
+        mCache.add(new HeaderCache(headerIdx, position - 1, header));
     }
 
     private void setYearHeader(int position) {
@@ -375,7 +380,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             position++;
         }
         String header = log.getYear() + ": " + formatNumber(total);
-        mCache.add(new HeaderCache(headerIdx, position-1, header));
+        mCache.add(new HeaderCache(headerIdx, position - 1, header));
     }
 
     private void setDailyHeader(int position) {
@@ -397,11 +402,11 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             position++;
         }
         String header = getMonthFromNumber(log.getMonth()) + " " + log.getDay() + ": " + formatNumber(total);
-        mCache.add(new HeaderCache(headerIdx, position-1, header));
+        mCache.add(new HeaderCache(headerIdx, position - 1, header));
     }
 
     /**
-     * Get time frame start.
+     * Get 7x days from start that has date within 6 days before it.
      *
      * @param date log date Integer[] in form {year, month, day}
      * @param start today Integer[] in form {year, month, day}
@@ -448,8 +453,8 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
     }
 
     /**
-     * @param date log date Integer[] in form {year, month, day}
-     * @param start today Integer[] in form {year, month, day}
+     * @param date log date Integer[] in form {year, month}
+     * @param start today Integer[] in form {year, month}
      * @return altered start
      */
     private Integer[] getQuarterStart(Integer[] date, Integer[] start) {
@@ -466,8 +471,8 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
     }
 
     /**
-     * @param date log date Integer[] in form {year, month, day}
-     * @param start today Integer[] in form {year, month, day}
+     * @param date log date Integer[] in form {year, month}
+     * @param start today Integer[] in form {year, month}
      * @return true if date is 2 months before or equal to start
      */
     private boolean monthWithinQuarter(Integer[] date, Integer[] start) {
@@ -478,8 +483,8 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
     }
 
     /**
-     * @param date log date Integer[] in form {year, month, day}
-     * @param start today Integer[] in form {year, month, day}
+     * @param date log date Integer[] in form {year, month}
+     * @param start today Integer[] in form {year, month}
      * @return altered start
      */
     private Integer[] getHalfStart(Integer[] date, Integer[] start) {
@@ -495,6 +500,11 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         return start;
     }
 
+    /**
+     * @param month log date Integer[] in form {year, month}
+     * @param start today Integer[] in form {year, month}
+     * @return true if date is 5 months before or equal to start
+     */
     private boolean monthWithinHalf(Integer[] month, Integer[] start) {
         if(start[1] - 5 > 0)
             return month[1] >= start[1] - 5 && month[1] <= start[1] && month[0].equals(start[0]);
@@ -503,11 +513,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
 
     }
 
-    public String getDeleteHeader(LogModel log) {
-        return formatToDate(log);
-    }
-
-    private String formatToDate(LogModel log) {
+    public String formatMonthDay(LogModel log) {
         return getMonthFromNumber(log.getMonth()) + " " + getNumberWithExtension(log.getDay()) + ":";
     }
 
@@ -582,7 +588,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
     /**
      * Used to store header data for logs within the time frame
      */
-    class HeaderCache {
+    static class HeaderCache {
         int startIdx, endIdx;
         String header;
 

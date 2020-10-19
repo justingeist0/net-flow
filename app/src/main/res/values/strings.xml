@@ -83,5 +83,8 @@
     <string name="drop_down_menu_to_select_time_frame">Click to release menu to select time frame</string>
 
     <string name="netFlowMainChannel">net_flow_main_channel</string>
+    <string name="channel_description">Reminder to add logs of the day</string>
+    <string name="channel_name">Net Flow</string>
+    <string name="channel_id">net_flow_channel</string>
 
 </resources>

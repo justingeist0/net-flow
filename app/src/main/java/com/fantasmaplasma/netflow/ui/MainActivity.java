@@ -24,7 +24,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -73,24 +72,6 @@ public class MainActivity extends AppCompatActivity {
         placeViewHolderObservers();
         setUpTimeFrameDropDown();
         setUpAddLog();
-        createChannel();
-    }
-
-    private void createChannel() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    "net_flow_channel",
-                    "Net Flow",
-                    NotificationManager.IMPORTANCE_MIN
-            );
-            channel.setShowBadge(false);
-            channel.enableLights(true);
-            channel.setLightColor(Color.GREEN);
-            channel.setDescription("Reminder to add logs");
-
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
     }
 
     private void setUpLogList() {
@@ -358,6 +339,11 @@ public class MainActivity extends AppCompatActivity {
         prevInput = input;
     }
 
+    /**
+     * Format incoming text from amount edit text.
+     *
+     * @param input Amount String
+     */
     private void formatText(String input) {
         if(input.isEmpty()) return;
         boolean registerInput;
@@ -479,7 +465,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void confirmDelete() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getString(R.string.delete_confirmation_header, logListAdapter.getDeleteHeader(selectedLogToEdit)));
+        builder.setTitle(getString(R.string.delete_confirmation_header, logListAdapter.formatMonthDay(selectedLogToEdit)));
         builder.setMessage(getString(R.string.delete_confirmation_body));
         builder.setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
             @Override

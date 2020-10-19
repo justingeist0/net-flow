@@ -38,18 +38,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        db.execSQL("DROP TABLE IF EXISTS " + LOG_TABLE);
+        onCreate(db);
     }
 
     public boolean addOne(LogModel log) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
-
         cv.put(COLUMN_DATE, log.getTimeStamp());
         cv.put(COLUMN_PURPOSE, log.getNote());
         cv.put(COLUMN_AMOUNT, log.getAmount());
         cv.put(COLUMN_IS_POSITIVE, log.isPositive());
-
         long result = db.insert(LOG_TABLE, null, cv);
         db.close();
         return !(result == -1);
@@ -58,11 +57,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public boolean updateLog(LogModel log) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
-
         cv.put(COLUMN_PURPOSE, log.getNote());
         cv.put(COLUMN_AMOUNT, log.getAmount());
         cv.put(COLUMN_IS_POSITIVE, log.isPositive());
-
         long result = db.update(LOG_TABLE, cv, "ID=?", new String[]{log.getID()});
         db.close();
         return !(result == -1);
@@ -77,34 +74,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public LogModel getLogAt(int index) {
         String query = "SELECT * FROM " + LOG_TABLE;
-
         SQLiteDatabase db = this.getReadableDatabase();
-
         Cursor cursor = db.rawQuery(query, null);
         cursor.moveToPosition(index);
         LogModel logModel = createLogFromCursor(cursor);
-
         cursor.close();
         db.close();
-
         return logModel;
     }
 
     public List<LogModel> getLogs() {
         List<LogModel> returnList = new ArrayList<>();
-
         String query = "SELECT * FROM " + LOG_TABLE;
-
         SQLiteDatabase db = this.getReadableDatabase();
-
         Cursor cursor = db.rawQuery(query, null);
-
         if (cursor.moveToLast()) {
             do {
                 returnList.add(createLogFromCursor(cursor));
             } while (cursor.moveToPrevious());
         }
-
         cursor.close();
         db.close();
         return returnList;
@@ -116,7 +104,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String purpose = cursor.getString(2);
         Double amount = cursor.getDouble(3);
         boolean positive = cursor.getInt(4) == 1;
-
         return new LogModel(date, purpose, amount, positive, ID);
     }
 
