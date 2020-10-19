@@ -6,6 +6,6 @@ Features:
 - Custom Adapters (RecyclerView/Spinner)
 - SQLite Database
 - Material Design
-- MVVM architechure
+- MVVM
 
-[Google Play](https://play.google.com/store/apps/details?id=com.fantasma.netflow)
+[Download on Google Play](https://play.google.com/store/apps/details?id=com.fantasma.netflow)
