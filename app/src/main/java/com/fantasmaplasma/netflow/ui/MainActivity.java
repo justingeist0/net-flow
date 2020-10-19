@@ -1,4 +1,4 @@
-package com.fantasma.netflow.ui;
+package com.fantasmaplasma.netflow.ui;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -37,12 +37,12 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.fantasma.netflow.R;
-import com.fantasma.netflow.adapter.HeaderDecoration;
-import com.fantasma.netflow.adapter.LogListAdapter;
-import com.fantasma.netflow.adapter.TimeFrameSpinnerAdapter;
-import com.fantasma.netflow.database.LogModel;
-import com.fantasma.netflow.util.Constant;
+import com.fantasmaplasma.netflow.R;
+import com.fantasmaplasma.netflow.adapter.HeaderDecoration;
+import com.fantasmaplasma.netflow.adapter.LogListAdapter;
+import com.fantasmaplasma.netflow.adapter.TimeFrameSpinnerAdapter;
+import com.fantasmaplasma.netflow.database.LogModel;
+import com.fantasmaplasma.netflow.util.Constant;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -58,9 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView currentTimeFrame;
     private Spinner timeFrameSpinner;
     private ViewModel viewModel;
-
     private LogListAdapter logListAdapter;
-
     private boolean addLogScreenOpened;
     private String prevInput;
     private float logListLayoutHeight;
@@ -75,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         placeViewHolderObservers();
         setUpTimeFrameDropDown();
         setUpAddLog();
+        createChannel();
     }
 
     private void createChannel() {

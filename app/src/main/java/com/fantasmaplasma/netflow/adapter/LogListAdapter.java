@@ -1,4 +1,4 @@
-package com.fantasma.netflow.adapter;
+package com.fantasmaplasma.netflow.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -6,15 +6,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-
-import com.fantasma.netflow.R;
-import com.fantasma.netflow.database.LogModel;
-import com.fantasma.netflow.util.Constant;
+import com.fantasmaplasma.netflow.R;
+import com.fantasmaplasma.netflow.database.LogModel;
+import com.fantasmaplasma.netflow.util.Constant;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -29,7 +27,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
     private List<LogModel> logs;
     private int mCurrentTimeFrame, steps;
     private Integer[] today;
-    private HashMap<Integer, String> mCache;
+    private LinkedList<HeaderCache> mCache;
     private float translationX;
 
     public LogListAdapter(Context context, Integer[] today, final EditBtnClickListener editBtnClickListener) {
@@ -46,7 +44,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         };
         mCurrentTimeFrame = 0;
         steps = 0;
-        mCache = new HashMap<>();
+        mCache = new LinkedList<>();
     }
 
     @NonNull
@@ -167,6 +165,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         logs = updatedLogs;
         resetLocalData();
         notifyDataSetChanged();
+        mSelected = -1;
     }
 
     public int getSelectedDatabaseIdx() {
@@ -181,18 +180,21 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         logs.add(0,logModel);
         resetLocalData();
         notifyItemInserted(0);
+        mSelected = -1;
     }
 
     public void removeLog() {
         logs.remove(mSelected);
         resetLocalData();
         notifyItemRemoved(mSelected);
+        mSelected = -1;
     }
 
     public void updateLog(LogModel newLog) {
         logs.set(mSelected, newLog);
         resetLocalData();
         notifyItemChanged(mSelected);
+        mSelected = -1;
     }
 
     private void resetLocalData() {
@@ -201,35 +203,210 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             editBtn.setVisibility(View.INVISIBLE);
             editBtn = null;
         }
-        mSelected = -1;
     }
 
     public boolean checkIfHeaderNeeded(int position) {
-        if(position == 0) return true;
+        if(position < 0) return false;
+        for(int i = 0; i < mCache.size(); i++) {
+            HeaderCache header = mCache.get(i);
+            if(header.startIdx <= position && header.endIdx >= position)
+                return position == header.startIdx;
+        }
         switch(mCurrentTimeFrame) {
             case Constant.WEEK:
-                return firstOfWeekRelativeToToday(position);
+                setWeekHeader(position);
+                break;
             case Constant.MONTH:
-                return firstOfMonth(position);
+                setMonthHeader(position);
+                break;
             case Constant.QUARTER:
-                return firstOfQuarter(position);
+                setQuarterHeader(position);
+                break;
             case Constant.HALF:
-                return firstOfHalf(position);
+                setHalfHeader(position);
+                break;
             case Constant.YEAR:
-                return firstOfYear(position);
+                setYearHeader(position);
+                break;
             default:
-                return firstOfDifferentDay(position);
+                setDailyHeader(position);
+                break;
         }
+        return mCache.getLast().startIdx == position;
     }
 
-    private boolean firstOfWeekRelativeToToday(int position) {
-        if(position-1 < 0) return true;
+    public String getHeaderText(int position) {
+        for(HeaderCache headerCache: mCache) {
+            if(headerCache.startIdx <= position &&
+                    headerCache.endIdx >= position)
+                return headerCache.header;
+        }
+        return "";
+    }
+
+    private void setWeekHeader(int position) {
         LogModel log = logs.get(position);
+        steps = 1;
         Integer[] start = getWeekStart(log.getDate(), new Integer[]{today[0], today[1], today[2]});
-        LogModel prevLog = logs.get(position-1);
-        return dayWithinWeek(log.getDate(), start) != dayWithinWeek(prevLog.getDate(), start);
+        while(position-1 >= 0) {
+            if(dayWithinWeek(logs.get(position-1).getDate(), start)) {
+                position--;
+            } else {
+                break;
+            }
+        }
+        int headerIdx = position;
+        double total = 0.0;
+        while(position < logs.size()) {
+            LogModel temp = logs.get(position);
+            if(dayWithinWeek(temp.getDate(), start))
+                total += temp.getValue();
+            else
+                break;
+            position++;
+        }
+        String header;
+        if(steps == 1)
+            header = context.getResources().getQuantityString(R.plurals.week, steps, formatNumber(total));
+        else
+            header = context.getResources().getQuantityString(R.plurals.week, steps, steps, formatNumber(total));
+        mCache.add(new HeaderCache(headerIdx, position-1, header));
     }
 
+    private void setMonthHeader(int position) {
+        LogModel log = logs.get(position);
+        while(position - 1 >= 0) {
+            LogModel temp = logs.get(position-1);
+            if(temp.getMonth() == log.getMonth() &&
+                    temp.getYear() == log.getYear()) {
+                position--;
+            } else {
+                break;
+            }
+        }
+        int headerIdx = position;
+        double total = 0.0;
+        while(position < logs.size()) {
+            LogModel temp = logs.get(position);
+            if(temp.getMonth() == log.getMonth() &&
+                    temp.getYear() == log.getYear())
+                total+= temp.getValue();
+            else
+                break;
+            position++;
+        }
+        String header = getMonthFromNumber(log.getMonth()) + " " + formatNumber(total);
+        mCache.add(new HeaderCache(headerIdx, position-1, header));
+    }
+
+    private void setQuarterHeader(int position) {
+        LogModel log = logs.get(position);
+        steps = 1;
+        Integer[] start = getQuarterStart(log.getDate(), new Integer[]{today[0], today[1]});
+        while(position - 1 >= 0) {
+            if(monthWithinQuarter(logs.get(position-1).getDate(), start)) {
+                position--;
+            } else {
+                break;
+            }
+        }
+        int headerIdx = position;
+        double total = 0.0;
+        while(position < logs.size()) {
+            LogModel temp = logs.get(position);
+            if(monthWithinQuarter(temp.getDate(), start))
+                total += temp.getValue();
+            else
+                break;
+            position++;
+        }
+        String header;
+        if(steps == 1)
+            header = context.getResources().getQuantityString(R.plurals.quarter, steps, formatNumber(total));
+        else
+            header = context.getResources().getQuantityString(R.plurals.quarter, steps, steps, formatNumber(total));
+        mCache.add(new HeaderCache(headerIdx, position-1, header));
+    }
+
+    private void setHalfHeader(int position) {
+        LogModel log = logs.get(position);
+        steps = 1;
+        Integer[] start = getHalfStart(log.getDate(), new Integer[]{today[0], today[1]});
+        while(position - 1 >= 0) {
+            if(monthWithinHalf(logs.get(position-1).getDate(), start))
+                position--;
+            else
+                break;
+        }
+        int headerIdx = position;
+        double total = 0.0;
+        while(position < logs.size()) {
+            LogModel temp = logs.get(position);
+            if(monthWithinHalf(temp.getDate(), start))
+                total += temp.getValue();
+            else
+                break;
+            position++;
+        }
+        String header;
+        if(steps == 1)
+            header = context.getResources().getQuantityString(R.plurals.half, steps, formatNumber(total));
+        else
+            header = context.getResources().getQuantityString(R.plurals.half, steps, steps, formatNumber(total));
+        mCache.add(new HeaderCache(headerIdx, position-1, header));
+    }
+
+    private void setYearHeader(int position) {
+        LogModel log = logs.get(position);
+        while(position - 1 >= 0) {
+            if(logs.get(position-1).getYear() == log.getYear())
+                position--;
+            else
+                break;
+        }
+        int headerIdx = position;
+        double total = 0.0;
+        while(position < logs.size()) {
+            LogModel temp = logs.get(position);
+            if(log.getYear() == temp.getYear())
+                total += temp.getValue();
+            else
+                break;
+            position++;
+        }
+        String header = log.getYear() + ": " + formatNumber(total);
+        mCache.add(new HeaderCache(headerIdx, position-1, header));
+    }
+
+    private void setDailyHeader(int position) {
+        LogModel log = logs.get(position);
+        while(position - 1 >= 0) {
+            if(Arrays.equals(logs.get(position - 1).getDate(), log.getDate()))
+                position--;
+            else
+                break;
+        }
+        int headerIdx = position;
+        double total = 0.0;
+        while(position < logs.size()) {
+            LogModel temp = logs.get(position);
+            if(Arrays.equals(temp.getDate(), log.getDate()))
+                total += temp.getValue();
+            else
+                break;
+            position++;
+        }
+        String header = getMonthFromNumber(log.getMonth()) + " " + log.getDay() + ": " + formatNumber(total);
+        mCache.add(new HeaderCache(headerIdx, position-1, header));
+    }
+
+    /**
+     * Get time frame start.
+     *
+     * @param date log date Integer[] in form {year, month, day}
+     * @param start today Integer[] in form {year, month, day}
+     * @return altered start
+     */
     private Integer[] getWeekStart(Integer[] date, Integer[] start) {
         if(!dayWithinWeek(date, start)) {
             start[2] -= 7;
@@ -247,6 +424,11 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         return start;
     }
 
+    /**
+     * @param date log date Integer[] in form {year, month, day}
+     * @param start today Integer[] in form {year, month, day}
+     * @return true if date is within week before of start
+     */
     private boolean dayWithinWeek(Integer[] date, Integer[] start) {
         int[] temp = {start[0], start[1], start[2]};
         temp[2] -= 6;
@@ -265,20 +447,11 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         return date[2] >= temp[2] && date[2] <= start[2];
     }
 
-    private boolean firstOfMonth(int position) {
-        if(position-1 < 0) return true;
-        LogModel log = logs.get(position);
-        return log.getMonth() != logs.get(position - 1).getMonth();
-    }
-
-    private boolean firstOfQuarter(int position) {
-        if(position-1 < 0) return true;
-        LogModel log = logs.get(position);
-        Integer[] start = getQuarterStart(log.getDate(), new Integer[]{today[0], today[1]});
-        LogModel prevLog = logs.get(position - 1);
-        return monthWithinQuarter(log.getDate(), start) != monthWithinQuarter(prevLog.getDate(), start);
-    }
-
+    /**
+     * @param date log date Integer[] in form {year, month, day}
+     * @param start today Integer[] in form {year, month, day}
+     * @return altered start
+     */
     private Integer[] getQuarterStart(Integer[] date, Integer[] start) {
         if(!monthWithinQuarter(date, start)) {
             start[1] -= 3;
@@ -292,6 +465,11 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         return start;
     }
 
+    /**
+     * @param date log date Integer[] in form {year, month, day}
+     * @param start today Integer[] in form {year, month, day}
+     * @return true if date is 2 months before or equal to start
+     */
     private boolean monthWithinQuarter(Integer[] date, Integer[] start) {
         if(date[1] >= start[1]-2 && date[1] <= start[1] && date[0].equals(start[0])) return true;
         return start[1] <= 2 &&
@@ -299,14 +477,11 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
                 (date[1] <= start[1] && date[0].equals(start[0]));
     }
 
-    private boolean firstOfHalf(int position) {
-        if(position-1 < 0) return true;
-        LogModel log = logs.get(position);
-        Integer[] start = getHalfStart(log.getDate(), new Integer[]{today[0], today[1]});
-        LogModel prevLog = logs.get(position - 1);
-        return monthWithinHalf(log.getDate(), start) != monthWithinHalf(prevLog.getDate(), start);
-    }
-
+    /**
+     * @param date log date Integer[] in form {year, month, day}
+     * @param start today Integer[] in form {year, month, day}
+     * @return altered start
+     */
     private Integer[] getHalfStart(Integer[] date, Integer[] start) {
         if(!monthWithinHalf(date, start)) {
             start[1] -= 6;
@@ -326,203 +501,6 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         return (month[1] >= 12 + start[1]-5 && month[0] == start[0] - 1) ||
                 (month[1] <= start[1] && month[0].equals(start[0]));
 
-    }
-
-    private boolean firstOfYear(int position) {
-        if(position-1 < 0) return true;
-        return logs.get(position).getYear() != logs.get(position - 1).getYear();
-    }
-
-    private boolean firstOfDifferentDay(int position) {
-        if(position-1 < 0) return true;
-        return !Arrays.equals(logs.get(position).getDate(), logs.get(position - 1).getDate());
-    }
-
-    public String getHeaderText(int position) {
-        switch(mCurrentTimeFrame) {
-            case Constant.WEEK:
-                return getWeekHeader(position);
-            case Constant.MONTH:
-                return getMonthHeader(position);
-            case Constant.QUARTER:
-                return getQuarterHeader(position);
-            case Constant.HALF:
-                return getHalfHeader(position);
-            case Constant.YEAR:
-                return getYearHeader(position);
-            default:
-                return getDailyHeader(position);
-        }
-    }
-
-    private String getWeekHeader(int position) {
-        LogModel log = logs.get(position);
-        steps = 1;
-        Integer[] start = getWeekStart(log.getDate(), new Integer[]{today[0], today[1], today[2]});
-        if(mCache.containsKey(Arrays.hashCode(start)))
-            return Objects.requireNonNull(mCache.get(Arrays.hashCode(start)));
-        while(position-1 >= 0) {
-            if(dayWithinWeek(logs.get(position-1).getDate(), start)) {
-                position--;
-            } else {
-                break;
-            }
-        }
-        double total = 0.0;
-        while(position+1 < logs.size()) {
-            position++;
-            LogModel temp = logs.get(position);
-            if(dayWithinWeek(temp.getDate(), start)) {
-                total += temp.getValue();
-            }
-        }
-
-        String header;
-        if(steps == 1)
-            header = context.getResources().getQuantityString(R.plurals.week, steps, formatNumber(total));
-        else
-            header = context.getResources().getQuantityString(R.plurals.week, steps, steps, formatNumber(total));
-        mCache.put(Arrays.hashCode(start), header);
-        return header;
-    }
-
-    private String getMonthHeader(int position) {
-        LogModel log = logs.get(position);
-        Integer[] start = new Integer[] {log.getYear(), log.getMonth()};
-        if(mCache.containsKey(Arrays.hashCode(start)))
-            return Objects.requireNonNull(mCache.get(Arrays.hashCode(start)));
-        while(position - 1 >= 0) {
-            LogModel temp = logs.get(position-1);
-            if(temp.getMonth() == log.getMonth() &&
-                temp.getYear() == log.getYear()) {
-                position--;
-            } else {
-                break;
-            }
-        }
-        double total = 0.0;
-        while(position+1 < logs.size()) {
-            position++;
-            LogModel temp = logs.get(position);
-            if(temp.getMonth() == log.getMonth() &&
-            temp.getYear() == log.getYear())
-                total+= temp.getValue();
-            else
-                break;
-        }
-        String header = getMonthFromNumber(log.getMonth()) + " " + formatNumber(total);
-        mCache.put(Arrays.hashCode(start), header);
-        return header;
-    }
-
-    private String getQuarterHeader(int position) {
-        LogModel log = logs.get(position);
-        steps = 1;
-        Integer[] start = getQuarterStart(log.getDate(), new Integer[]{today[0], today[1]});
-        if(mCache.containsKey(Arrays.hashCode(start)))
-            return Objects.requireNonNull(mCache.get(Arrays.hashCode(start)));
-        while(position - 1 >= 0) {
-            if(monthWithinQuarter(logs.get(position-1).getDate(), start)) {
-                position--;
-            } else {
-                break;
-            }
-        }
-        double total = 0.0;
-        while(position < logs.size()) {
-            LogModel temp = logs.get(position);
-            if(monthWithinQuarter(temp.getDate(), start))
-                total += temp.getValue();
-            else
-                break;
-            position++;
-        }
-        String header;
-        if(steps == 1)
-            header = context.getResources().getQuantityString(R.plurals.quarter, steps, formatNumber(total));
-        else
-            header = context.getResources().getQuantityString(R.plurals.quarter, steps, steps, formatNumber(total));
-        mCache.put(Arrays.hashCode(start), header);
-        return header;
-    }
-
-    private String getHalfHeader(int position) {
-        LogModel log = logs.get(position);
-        steps = 1;
-        Integer[] start = getHalfStart(log.getDate(), new Integer[]{today[0], today[1]});
-        if(mCache.containsKey(Arrays.hashCode(start)))
-            return Objects.requireNonNull(mCache.get(Arrays.hashCode(start)));
-        while(position - 1 >= 0) {
-            if(monthWithinHalf(logs.get(position-1).getDate(), start))
-                position--;
-            else
-                break;
-        }
-        double total = 0.0;
-        while(position < logs.size()) {
-            LogModel temp = logs.get(position);
-            if(monthWithinHalf(temp.getDate(), start))
-                total += temp.getValue();
-            else
-                break;
-            position++;
-        }
-        String header;
-        if(steps == 1)
-            header = context.getResources().getQuantityString(R.plurals.half, steps, formatNumber(total));
-        else
-            header = context.getResources().getQuantityString(R.plurals.half, steps, steps, formatNumber(total));
-        mCache.put(Arrays.hashCode(start), header);
-        return header;
-    }
-
-    private String getYearHeader(int position) {
-        LogModel log = logs.get(position);
-        Integer[] start = new Integer[]{log.getYear()};
-        if(mCache.containsKey(Arrays.hashCode(start)))
-            return Objects.requireNonNull(mCache.get(Arrays.hashCode(start)));
-        while(position - 1 >= 0) {
-            if(logs.get(position-1).getYear() == log.getYear())
-                position--;
-            else
-                break;
-        }
-        double total = 0.0;
-        while(position < logs.size()) {
-            LogModel temp = logs.get(position);
-            if(log.getYear() == temp.getYear())
-                total += temp.getValue();
-            else
-                break;
-            position++;
-        }
-        String header = log.getYear() + ": " + formatNumber(total);
-        mCache.put(Arrays.hashCode(start), header);
-        return header;
-    }
-
-    private String getDailyHeader(int position) {
-        LogModel log = logs.get(position);
-        if(mCache.containsKey(Arrays.hashCode(log.getDate())))
-            return Objects.requireNonNull(mCache.get(Arrays.hashCode(log.getDate())));
-        while(position - 1 >= 0) {
-            if(Arrays.equals(logs.get(position - 1).getDate(), log.getDate()))
-                position--;
-            else
-                break;
-        }
-        double total = 0.0;
-        while(position < logs.size()) {
-            LogModel temp = logs.get(position);
-            if(Arrays.equals(temp.getDate(), log.getDate()))
-                total += temp.getValue();
-            else
-                break;
-            position++;
-        }
-        String header = getMonthFromNumber(log.getMonth()) + " " + log.getDay() + ": " + formatNumber(total);
-        mCache.put(Arrays.hashCode(log.getDate()), header);
-        return header;
     }
 
     public String getDeleteHeader(LogModel log) {
@@ -599,6 +577,20 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
 
     private Boolean isLeapYear(int year) {
         return year % 400 == 0 || year % 4 == 0 && year % 100 != 0;
+    }
+
+    /**
+     * Used to store header data for logs within the time frame
+     */
+    class HeaderCache {
+        int startIdx, endIdx;
+        String header;
+
+        HeaderCache(int startIdx, int endIdx, String header) {
+            this.startIdx = startIdx;
+            this.endIdx = endIdx;
+            this.header = header;
+        }
     }
 
     public interface EditBtnClickListener {

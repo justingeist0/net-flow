@@ -1,4 +1,4 @@
-package com.fantasma.netflow.adapter;
+package com.fantasmaplasma.netflow.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.fantasma.netflow.R;
+import com.fantasmaplasma.netflow.R;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

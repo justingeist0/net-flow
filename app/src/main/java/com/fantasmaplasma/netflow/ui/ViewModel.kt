@@ -1,14 +1,14 @@
-package com.fantasma.netflow.ui
+package com.fantasmaplasma.netflow.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.fantasma.netflow.R
-import com.fantasma.netflow.adapter.LogListAdapter
-import com.fantasma.netflow.database.DatabaseHelper
-import com.fantasma.netflow.database.LogModel
+import com.fantasmaplasma.netflow.R
+import com.fantasmaplasma.netflow.adapter.LogListAdapter
+import com.fantasmaplasma.netflow.database.DatabaseHelper
+import com.fantasmaplasma.netflow.database.LogModel
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,7 +32,7 @@ class ViewModel : ViewModel() {
         adapter.setLogs(logs)
         uiScope.launch {
             if (logs.isEmpty()) {
-                logs = fillUpWithXRandomLogs(10000) ?: logs
+                logs = getAllLogs(context) ?: logs
             }
             adapter.setLogs(logs)
         }

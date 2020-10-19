@@ -1,4 +1,4 @@
-package com.fantasma.netflow.database;
+package com.fantasmaplasma.netflow.database;
 
 import android.annotation.SuppressLint;
 

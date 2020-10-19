@@ -1,12 +1,12 @@
-package com.fantasma.netflow.util
+package com.fantasmaplasma.netflow.util
 
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
-import com.fantasma.netflow.R
-import com.fantasma.netflow.ui.MainActivity
+import com.fantasmaplasma.netflow.R
+import com.fantasmaplasma.netflow.ui.MainActivity
 
 private const val NOTIFICATION_ID = 0
 private const val REQUEST_CODE = 0

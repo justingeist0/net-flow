@@ -1,4 +1,4 @@
-package com.fantasma.netflow.util
+package com.fantasmaplasma.netflow.util
 
 object Constant {
     const val WEEK = 0

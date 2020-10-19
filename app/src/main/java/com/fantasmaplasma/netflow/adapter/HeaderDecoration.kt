@@ -1,4 +1,4 @@
-package com.fantasma.netflow.adapter
+package com.fantasmaplasma.netflow.adapter
 
 import android.content.Context
 import android.graphics.Canvas
@@ -8,7 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.fantasma.netflow.R
+import com.fantasmaplasma.netflow.R
 
 class HeaderDecoration(
         private val context: Context,
@@ -37,7 +37,7 @@ class HeaderDecoration(
         for(i in 1 until parent.childCount) {
             val childView = parent.getChildAt(i)
             val position = parent.getChildAdapterPosition(childView)
-            if(position >= 0 && monthChecker.requiresHeader(position)) {
+            if(monthChecker.requiresHeader(position)) {
                 drawHeader(
                         c,
                         childView,

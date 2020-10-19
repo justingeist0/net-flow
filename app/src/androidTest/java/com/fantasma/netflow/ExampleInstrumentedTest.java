@@ -24,24 +24,7 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        assertEquals("com.fantasma.netflow", appContext.getPackageName());
+        assertEquals("com.fantasmaplasma.netflow", appContext.getPackageName());
     }
 
-    private Integer[] getWeekStart(Integer[] date, Integer[] start) {
-        if(!dayWithinWeek(date, start)) {
-            start[2] -= 7;
-            if(start[2] <= 0) {
-                start[1]--;
-                if(start[1] < 1) {
-                    start[0]--;
-                    start[1] = 12;
-                }
-                start[2] = DataAtTimeFrames.Companion
-                        .getAmountOfDaysInMonth(start[0], start[1]) + start[2];
-            }
-            steps++;
-            getWeekStart(date, start);
-        }
-        return start;
-    }
 }
