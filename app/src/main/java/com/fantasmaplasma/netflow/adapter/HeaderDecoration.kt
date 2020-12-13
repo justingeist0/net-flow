@@ -38,7 +38,7 @@ class HeaderDecoration(
             val childView = parent.getChildAt(i)
             val position = parent.getChildAdapterPosition(childView)
             if(monthChecker.requiresHeader(position)) {
-                drawHeader(
+                drawHeader( //May set topHeaderTranslationY
                         c,
                         childView,
                         headerView,
@@ -46,18 +46,20 @@ class HeaderDecoration(
                 )
             }
         }
-        val position = parent.getChildAdapterPosition(
+        val topLogAdapterPosition = parent.getChildAdapterPosition(
                 parent.getChildAt(0)
         )
-        if(position < 0) return
-        drawHeader( //Top Most Header
-                c,
-                topHeaderTranslationY,
-                headerView,
-                monthChecker.getHeader(
-                        position
-                )
-        )
+        val topHeaderExist = topLogAdapterPosition >= 0
+        if(topHeaderExist) {
+            drawHeader(
+                    c,
+                    topHeaderTranslationY,
+                    headerView,
+                    monthChecker.getHeader(
+                            topLogAdapterPosition
+                    )
+            )
+        }
     }
 
     private fun getHeaderView(parent: RecyclerView) : View {

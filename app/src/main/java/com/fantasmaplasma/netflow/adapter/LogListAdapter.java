@@ -27,7 +27,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
     private List<LogModel> logs;
     private int mCurrentTimeFrame, steps;
     private Integer[] today;
-    private LinkedList<HeaderCache> mCache;
+    private final LinkedList<HeaderCache> mCache;
     private float translationX;
 
     public LogListAdapter(Context context, Integer[] today, final EditBtnClickListener editBtnClickListener) {
@@ -209,7 +209,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
         }
     }
 
-    public boolean checkIfHeaderNeeded(int position) {
+    public boolean saveHeaderAtPosition(int position) {
         if(position < 0) return false;
         for(int i = 0; i < mCache.size(); i++) {
             HeaderCache header = mCache.get(i);
@@ -245,7 +245,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
                     headerCache.endIdx >= position)
                 return headerCache.header;
         }
-        checkIfHeaderNeeded(position);
+        saveHeaderAtPosition(position);
         return getHeaderText(position);
     }
 
@@ -426,6 +426,7 @@ public class LogListAdapter extends RecyclerView.Adapter<LogListAdapter.LogViewH
             steps++;
             getWeekStart(date, start);
         }
+        Integer[] colors = {4, 4, 4};
         return start;
     }
 

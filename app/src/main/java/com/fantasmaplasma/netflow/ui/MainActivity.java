@@ -9,13 +9,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 
 import android.animation.ObjectAnimator;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.AnimationDrawable;
@@ -41,6 +44,7 @@ import com.fantasmaplasma.netflow.adapter.HeaderDecoration;
 import com.fantasmaplasma.netflow.adapter.LogListAdapter;
 import com.fantasmaplasma.netflow.adapter.TimeFrameSpinnerAdapter;
 import com.fantasmaplasma.netflow.database.LogModel;
+import com.fantasmaplasma.netflow.notification.RemindReceiver;
 import com.fantasmaplasma.netflow.util.Constant;
 
 import org.jetbrains.annotations.NotNull;
@@ -72,7 +76,32 @@ public class MainActivity extends AppCompatActivity {
         placeViewHolderObservers();
         setUpTimeFrameDropDown();
         setUpAddLog();
+        setUpNotification();
     }
+
+    private void setUpNotification() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    getString(R.string.channel_id),
+                    getString(R.string.channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel.enableLights(true);
+            channel.setLightColor(Color.GREEN);
+            channel.setDescription(getString(R.string.channel_description));
+            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+        }
+        //Set notification to go off a day from now.
+        Intent remind = new Intent(this, RemindReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, remind, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        long oneDay = 86_400_000;
+        alarmManager.set(AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + oneDay,
+                pendingIntent);
+    }
+
 
     private void setUpLogList() {
         mainLogsList = findViewById(R.id.mainLogsList);
@@ -112,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
         return new HeaderDecoration.MonthChecker() {
             @Override
             public boolean requiresHeader(int position) {
-                return logListAdapter.checkIfHeaderNeeded(position);
+                return logListAdapter.saveHeaderAtPosition(position);
             }
             @NotNull
             @Override

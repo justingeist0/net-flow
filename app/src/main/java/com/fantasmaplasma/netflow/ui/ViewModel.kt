@@ -9,6 +9,7 @@ import com.fantasmaplasma.netflow.R
 import com.fantasmaplasma.netflow.adapter.LogListAdapter
 import com.fantasmaplasma.netflow.database.DatabaseHelper
 import com.fantasmaplasma.netflow.database.LogModel
+import com.fantasmaplasma.netflow.util.GetRandomLogs
 import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,8 +33,8 @@ class ViewModel : ViewModel() {
         adapter.setLogs(logs)
         uiScope.launch {
             if (logs.isEmpty()) {
-                logs = getAllLogs(context) ?: logs
-                //logs = GetRandomLogs.fillList(getTimeStampNow(), 100000)
+//                logs = getAllLogs(context) ?: logs
+                logs = GetRandomLogs.fillList(getTimeStampNow(), 100)
                 //If you want to fill up list uncomment above line.
                 // editing won't work because it isn't in database.
             }

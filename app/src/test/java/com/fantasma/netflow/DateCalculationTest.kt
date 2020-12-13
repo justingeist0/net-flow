@@ -1,7 +1,5 @@
 package com.fantasma.netflow
 
-import com.fantasma.netflow.util.DataAtTimeFrames
-import com.fantasma.netflow.util.DataAtTimeFrames.Companion.getAmountOfDaysInMonth
 import org.junit.Test
 
 class DateCalculationTest {

@@ -86,5 +86,7 @@
     <string name="channel_description">Reminder to add logs of the day</string>
     <string name="channel_name">Net Flow</string>
     <string name="channel_id">net_flow_channel</string>
+    <string name="notification_body">Remember to keep track of your net flow today.</string>
+    <string name="reminder">Reminder</string>
 
 </resources>
